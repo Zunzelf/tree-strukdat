@@ -1,50 +1,29 @@
-from tkinter import *
-import re
-from util import kamus
+from flask import Flask, render_template, request
+from util.document_parser import Parser
+from util.tree import Tree
+from werkzeug.datastructures import ImmutableMultiDict
 
-class AutocompleteEntry(Entry):
-    def __init__(self, *args, **kwargs):
-        Entry.__init__(self, *args, **kwargs)
-        self.var = self["textvariable"]
-        if self.var == '':
-            self.var = self["textvariable"] = StringVar()
+app = Flask(__name__, template_folder='views')
 
-        self.var.trace('w', self.changed)        
-        self.lb_up = False
-        self.dictionary = kamus.Reader("kamus-raw.csv")
+lsWords = Parser.parse("daftar-kata.txt")
+dictionary = Tree()
+dictionary.generateRef(lsWords)
 
-    def changed(self, name, index, mode):  
+@app.route('/')
+def student():
+   return render_template('student.html')
 
-        if self.var.get() == '':
-            self.lb.destroy()
-            self.lb_up = False
-        else:
-            words = self.suggestion()
-            if words:            
-                if not self.lb_up:
-                    self.lb = Listbox()
-                    self.lb.place(x = self.winfo_x(), y = self.winfo_y() + self.winfo_height())
-                    self.lb_up = True
-                
-                self.lb.delete(0, END)
-                for w in words:
-                    self.lb.insert(END,w)
-            else:
-                if self.lb_up:
-                    self.lb.destroy()
-                    self.lb_up = False
-        
-    def suggestion(self):
-        return [self.dictionary.translate(self.var.get(), True)]
-        
+@app.route('/result',methods = ['POST', 'GET'])
+def result():
+   if request.method == 'POST':
+      result = request.form
+      inp = dictionary.check(result['Text'])
+      if inp: 
+        txt = "valid"
+      else :
+        txt = "non valid"
+      res = ImmutableMultiDict([('Result', txt)])
+      return render_template("result.html",result = res)
 
 if __name__ == '__main__':
-    root = Tk()
-    root.title('Simple Translator')
-    root.geometry('200x200')
-
-    entry = AutocompleteEntry(root)
-
-    entry.pack(expand=YES, fill = X)
-
-    root.mainloop()
+   app.run()

@@ -1,34 +1,50 @@
-from flask import Flask, request, render_template
-from util.document_parser import Parser
-from util.tree import Tree
+from tkinter import *
+import re
+from util import kamus
 
-app = Flask(__name__)
+class AutocompleteEntry(Entry):
+    def __init__(self, *args, **kwargs):
+        Entry.__init__(self, *args, **kwargs)
+        self.var = self["textvariable"]
+        if self.var == '':
+            self.var = self["textvariable"] = StringVar()
 
-lsWords = Parser.parse("daftar-kata.txt")
-dictionary = Tree()
-dictionary.generateRef(lsWords)
+        self.var.trace('w', self.changed)        
+        self.lb_up = False
+        self.dictionary = kamus.Reader("kamus-raw.csv")
 
-@app.route('/')
-def hello():
-    return "Hello World!"
+    def changed(self, name, index, mode):  
 
-
-@app.route('/<name>')
-def hello_name(name):
-    if dictionary.check(name):
-        return "{}!".format("valid")
-    else:
-        return "{}!".format("tidak valid") 
-
-@app.route('/input/')
-def my_form():
-    return render_template('main.html')
-
-# @app.route('/input/', methods=['POST'])
-# def my_form_post():
-#     text = request.form['text']
-#     processed_text = text.upper()
-#     return processed_text     
+        if self.var.get() == '':
+            self.lb.destroy()
+            self.lb_up = False
+        else:
+            words = self.suggestion()
+            if words:            
+                if not self.lb_up:
+                    self.lb = Listbox()
+                    self.lb.place(x = self.winfo_x(), y = self.winfo_y() + self.winfo_height())
+                    self.lb_up = True
+                
+                self.lb.delete(0, END)
+                for w in words:
+                    self.lb.insert(END,w)
+            else:
+                if self.lb_up:
+                    self.lb.destroy()
+                    self.lb_up = False
+        
+    def suggestion(self):
+        return [self.dictionary.translate(self.var.get(), True)]
+        
 
 if __name__ == '__main__':
-    app.run(host = "192.168.137.1")
+    root = Tk()
+    root.title('Simple Translator')
+    root.geometry('200x200')
+
+    entry = AutocompleteEntry(root)
+
+    entry.pack(expand=YES, fill = X)
+
+    root.mainloop()
