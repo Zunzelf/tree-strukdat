@@ -12,7 +12,7 @@ class AutocompleteEntry(Entry):
 
         self.var.trace('w', self.changed)        
         self.lb_up = False
-        lsWords = Parser.parse("daftar-kata.txt")
+        lsWords = Parser.parse("library/daftar-kata.txt")
         self.dictionary = Tree()
         self.dictionary.generateRef(lsWords)
 

@@ -5,7 +5,7 @@ from werkzeug.datastructures import ImmutableMultiDict
 
 app = Flask(__name__, template_folder='views')
 
-lsWords = Parser.parse("daftar-kata.txt")
+lsWords = Parser.parse("library/daftar-kata.txt")
 dictionary = Tree()
 dictionary.generateRef(lsWords)
 
